@@ -1,0 +1,1 @@
+Translation manager for react
