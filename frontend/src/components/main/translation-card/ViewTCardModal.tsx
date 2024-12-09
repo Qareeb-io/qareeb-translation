@@ -23,8 +23,8 @@ const ViewTCardModal: React.FC<ViewTCardModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center">
-      <div className="bg-light-background dark:bg-dark-background p-6 rounded shadow-lg w-96 max-w-full h-auto text-light-text-primary dark:text-dark-text-primary">
+    <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
+      <div className="bg-light-background dark:bg-dark-background p-6 rounded shadow-lg w-[95%] sm:w-[35%] max-w-full h-auto text-light-text-primary dark:text-dark-text-primary">
         <div className="flex justify-between items-center ">
           <div className="flex flex-row space-x-2">
             <FileText size={38} className="mt-1" />

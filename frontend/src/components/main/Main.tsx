@@ -1,54 +1,81 @@
 import React, { useEffect, useState, useRef } from "react";
-import Tcard from "./translation-card/Tcard";
 import SearchBar from "../ui/SearchBar";
 import CustomButton from "../ui/CustomButton";
 import { Plus, Trash } from "lucide-react";
 import ViewTCardModal from "./translation-card/ViewTCardModal";
-import { Translation } from "../../utils/types";
+import { TranslationT, CategoryT } from "../../utils/types";
 import AddEditTCardModal from "./translation-card/AddEditTCardModal";
-import DeleteTCardModal from "./translation-card/DeleteTCardModal";
+import DeleteModal from "./translation-card/DeleteModal";
 import useScreen from "../../hooks/useScreen";
 import { TranslationApi } from "../../apis/translationApi";
+import Category from "./translation-category/Category";
+import AddEditCategory from "./translation-category/AddEditCategory";
+import { CategoryApi } from "../../apis/categoryApi";
 
 const Main: React.FC = () => {
-  const [translations, setTranslations] = useState<Translation[]>([
-    {
-      translationKey: "Welcome Message",
-      translationPreview: "Welcome to the app",
-      detailedTranslations: [
-        "English: Welcome to the app",
-        "Spanish: Bienvenido a la aplicación",
-      ],
-    },
-    {
-      translationKey: "Logout Message",
-      translationPreview: "You have logged out",
-      detailedTranslations: [
-        "English: You have logged out",
-        "Spanish: Has cerrado sesión",
-      ],
-    },
-    {
-      translationKey: "Error Message",
-      translationPreview: "An error has occurred",
-      detailedTranslations: [
-        "English: An error has occurred",
-        "Spanish: Ha ocurrido un error",
-      ],
-    },
+  const [translations, setTranslations] = useState<TranslationT[]>([
+    /* Placeholder translations */
   ]);
   const [filteredTranslations, setFilteredTranslations] =
-    useState<Translation[]>(translations);
+    useState<TranslationT[]>(translations);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTranslation, setSelectedTranslation] =
-    useState<Translation | null>(null);
+    useState<TranslationT | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
+  const [isAddEdiCategoryOpen, setIsAddEdiCategoryOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryT>();
   const [selectedCards, setSelectedCards] = useState<Set<number>>(new Set());
   const { isSmallScreen } = useScreen();
   const translationApi = new TranslationApi();
+  const categoryApi = new CategoryApi();
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Placeholder category data
+  const categories = [
+    {
+      icon: <Plus />, // Add an appropriate icon here
+      name: "Greetings",
+      translations: [
+        {
+          translationKey: "Welcome Message",
+          translationPreview: "Welcome to the app",
+          detailedTranslations: [
+            "English: Welcome to the app",
+            "Spanish: Bienvenido a la aplicación",
+          ],
+        },
+        {
+          translationKey: "Goodbye Message",
+          translationPreview: "Goodbye",
+          detailedTranslations: ["English: Goodbye", "Spanish: Adiós"],
+        },
+      ],
+    },
+    {
+      icon: <Trash />, // Add an appropriate icon here
+      name: "Errors",
+      translations: [
+        {
+          translationKey: "Error Message",
+          translationPreview: "An error has occurred",
+          detailedTranslations: [
+            "English: An error has occurred",
+            "Spanish: Ha ocurrido un error",
+          ],
+        },
+        {
+          translationKey: "Timeout Message",
+          translationPreview: "Request timed out",
+          detailedTranslations: [
+            "English: Request timed out",
+            "Spanish: La solicitud ha expirado",
+          ],
+        },
+      ],
+    },
+  ];
 
   useEffect(() => {
     const getTranslations = async () => {
@@ -71,36 +98,25 @@ const Main: React.FC = () => {
     setFilteredTranslations(results);
   }, [searchQuery, translations]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setSelectedCards(new Set()); // Unselect all cards
-      }
-    };
-
-    document.addEventListener("click", handleClickOutside);
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-    };
-  }, []);
-
   const handleSearch = (query: string) => {
     setSearchQuery(query);
   };
 
-  const handleAddTranslationClick = () => {
+  const handleAddTranslationClick = (
+    e: React.MouseEvent<HTMLDivElement | HTMLButtonElement>,
+    category: CategoryT
+  ) => {
+    e.stopPropagation();
     setIsAddEditModalOpen(true);
+    setSelectedCategory(category);
   };
 
-  const handleCardClick = (translation: Translation) => {
+  const handleTranslationClick = (translation: TranslationT) => {
     setSelectedTranslation(translation);
     setIsViewModalOpen(true);
   };
 
-  const handleSelectCard = (index: number, selected: boolean) => {
+  const handleTranslationSelect = (index: number, selected: boolean) => {
     setSelectedCards((prev) => {
       const updated = new Set(prev);
       if (selected) {
@@ -112,16 +128,26 @@ const Main: React.FC = () => {
     });
   };
 
-  const addTranslation = async (translation: Translation) => {
+  const handleEditCategory = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+  };
+
+  const handleDeleteCategory = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+  };
+
+  const addTranslation = async (translation: TranslationT) => {
     try {
       const response = await translationApi.addTranslation(translation);
       console.log({ response });
     } catch (e) {
       console.log("error", e);
     }
+    //unselect the category after an action
+    setSelectedCategory(undefined);
   };
 
-  const editTranslation = async (translation: Translation) => {
+  const editTranslation = async (translation: TranslationT) => {
     try {
       const response = await translationApi.updateTranslation(
         selectedTranslation?.id!,
@@ -131,6 +157,7 @@ const Main: React.FC = () => {
     } catch (e) {
       console.log("error", e);
     }
+    setSelectedCategory(undefined);
   };
 
   const deleteTranslation = async () => {
@@ -142,6 +169,7 @@ const Main: React.FC = () => {
     } catch (e) {
       console.log("error", e);
     }
+    setSelectedCategory(undefined);
   };
 
   const deleteSelectedCards = async () => {
@@ -165,6 +193,34 @@ const Main: React.FC = () => {
     }
   };
 
+  const addCategory = async (
+    category: CategoryT,
+    translations: TranslationT[]
+  ) => {
+    try {
+      const response = await categoryApi.addCategory(category);
+      console.log({ response });
+      const response_2 = await categoryApi.insertTranslationBulk(
+        category.name,
+        translations
+      );
+      console.log({ response_2 });
+    } catch (e) {
+      console.log("Error", e);
+    }
+    setSelectedCategory(undefined);
+  };
+
+  const editCategory = async (category: CategoryT) => {
+    try {
+      const response = await categoryApi.updateCategory(category);
+      console.log({ response });
+    } catch (e) {
+      console.log("Error", e);
+    }
+    setSelectedCategory(undefined);
+  };
+
   return (
     <main
       ref={containerRef}
@@ -185,28 +241,53 @@ const Main: React.FC = () => {
             />
           )}
           <CustomButton
-            onClick={handleAddTranslationClick}
-            text={`${isSmallScreen ? "Add" : "Add Translation"}`}
+            onClick={() => setIsAddEdiCategoryOpen(true)}
+            text={`${isSmallScreen ? "Add" : "Add Category"}`}
             icon={<Plus />}
             className="w-28 md:w-60"
           />
         </div>
       </div>
 
-      {/* Translation Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredTranslations.map((translation, index) => (
-          <Tcard
+      {/* Categories */}
+      <div className="mt-2 space-y-6">
+        {categories.map((category, index) => (
+          <Category
             key={index}
-            index={index}
-            translationKey={translation.translationKey}
-            translationPreview={translation.translationPreview}
-            onClick={() => handleCardClick(translation)}
-            onSelect={handleSelectCard}
-            isGloballySelected={selectedCards.size > 0}
+            icon={category.icon}
+            name={category.name}
+            translations={category.translations}
+            onAddTranslation={(e) => handleAddTranslationClick(e, category)}
+            onViewTranslation={(translation) =>
+              handleTranslationClick(translation)
+            }
+            onEditCategory={(e) => {
+              e.stopPropagation();
+              setSelectedCategory(category);
+              setIsAddEdiCategoryOpen(true);
+            }}
+            onDeleteCategory={(e) => {
+              e.stopPropagation();
+              setSelectedCategory(category);
+              setIsDeleteModalOpen(true);
+            }}
           />
         ))}
       </div>
+
+      {/* Modals */}
+      <AddEditCategory
+        isOpen={isAddEdiCategoryOpen}
+        mode={selectedCategory ? "edit" : "add"}
+        category={selectedCategory}
+        onAdd={addCategory}
+        onEdit={editCategory}
+        onClose={() => {
+          setIsAddEdiCategoryOpen(false);
+          setSelectedCategory(undefined);
+        }}
+        onViewTranslation={(t) => handleTranslationClick(t)}
+      />
 
       {selectedTranslation && (
         <ViewTCardModal
@@ -217,30 +298,33 @@ const Main: React.FC = () => {
             setIsViewModalOpen(false);
           }}
           onEdit={() => setIsAddEditModalOpen(true)}
-          onDelete={() => setIsDeleteModalOpen(true)}
+          onDelete={() => {
+            setIsViewModalOpen(false);
+            deleteTranslation();
+          }}
         />
       )}
+
+      <DeleteModal
+        mode="category"
+        isOpen={isDeleteModalOpen}
+        translation={selectedTranslation!}
+        selectedCards={selectedCards}
+        onDelete={() => {}}
+        onClose={() => setIsDeleteModalOpen(false)}
+      />
 
       <AddEditTCardModal
         mode={selectedTranslation ? "edit" : "add"}
         isOpen={isAddEditModalOpen}
         translation={selectedTranslation}
-        onAdd={addTranslation}
-        onEdit={editTranslation}
+        category={selectedCategory}
+        onAdd={(t) => addTranslation(t)}
+        onEdit={(t) => editTranslation(t)}
         onClose={() => {
           setSelectedTranslation(null);
           setIsAddEditModalOpen(false);
         }}
-      />
-
-      <DeleteTCardModal
-        isOpen={isDeleteModalOpen}
-        translation={selectedTranslation!}
-        selectedCards={selectedCards}
-        onDelete={() =>
-          selectedCards ? deleteSelectedCards() : deleteTranslation()
-        }
-        onClose={() => setIsDeleteModalOpen(false)}
       />
     </main>
   );

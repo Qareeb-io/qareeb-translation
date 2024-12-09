@@ -30,6 +30,9 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({
 
   // Load the theme from localStorage or system preferences
   useEffect(() => {
+    //use dark theme only
+    localStorage.setItem("theme", "dark");
+
     const storedTheme = localStorage.getItem("theme");
     if (storedTheme) {
       // Use the stored theme if it exists

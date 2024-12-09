@@ -1,7 +1,15 @@
-export interface Translation {
+export interface TranslationT {
   id?: string;
   translationKey: string;
   translationPreview: string;
   detailedTranslations: string[];
-  creationDate?: string;
+  categoryName?: string;
+  creationDate?: Date;
+}
+
+export interface CategoryT {
+  id?: string;
+  name: string;
+  description?: string;
+  creationDate?: Date;
 }

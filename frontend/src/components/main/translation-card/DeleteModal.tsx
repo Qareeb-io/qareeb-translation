@@ -1,16 +1,18 @@
 import React from "react";
-import { Translation } from "../../../utils/types";
+import { TranslationT } from "../../../utils/types";
 import { Trash, X } from "lucide-react"; // Import icons for the buttons
 
-interface DeleteTCardModalProps {
+interface DeleteModalProps {
+  mode: "translation" | "category";
   isOpen: boolean;
-  translation: Translation | null;
+  translation: TranslationT | null;
   selectedCards: Set<number>;
   onDelete: (translationKey: string) => void;
   onClose: () => void;
 }
 
-const DeleteTCardModal: React.FC<DeleteTCardModalProps> = ({
+const DeleteModal: React.FC<DeleteModalProps> = ({
+  mode,
   isOpen,
   translation,
   selectedCards,
@@ -41,7 +43,11 @@ const DeleteTCardModal: React.FC<DeleteTCardModalProps> = ({
             <X size={14} />
           </button>
         </div>
-        {selectedCards ? (
+        {mode === "category" ? (
+          <p className="mt-4 text-light-text-primary dark:text-dark-text-primary">
+            Are you sure you want to delete this category?
+          </p>
+        ) : selectedCards ? (
           <p className="mt-4 text-light-text-primary dark:text-dark-text-primary">
             Are you sure you want to delete the selected translations?
           </p>
@@ -51,7 +57,6 @@ const DeleteTCardModal: React.FC<DeleteTCardModalProps> = ({
             {translation?.translationKey}"?
           </p>
         )}
-
         <div className="mt-6 flex justify-between gap-2">
           <button
             onClick={handleDelete}
@@ -73,4 +78,4 @@ const DeleteTCardModal: React.FC<DeleteTCardModalProps> = ({
   );
 };
 
-export default DeleteTCardModal;
+export default DeleteModal;

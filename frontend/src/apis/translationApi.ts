@@ -1,4 +1,4 @@
-import { Translation } from "../utils/types";
+import { TranslationT } from "../utils/types";
 
 export class TranslationApi {
   rootUrl = "/api/translations";
@@ -50,16 +50,18 @@ export class TranslationApi {
     }
   };
 
-  addTranslation = async (translation: Translation) => {
+  addTranslation = async (translation: TranslationT) => {
     try {
-      const response = await fetch(`${this.rootUrl}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(translation),
-      });
+      const response = await fetch(
+        `${this.rootUrl}/${translation.categoryName}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(translation),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to create translation");
@@ -75,7 +77,7 @@ export class TranslationApi {
 
   updateTranslation = async (
     translationId: string,
-    translation: Translation
+    translation: TranslationT
   ) => {
     try {
       const response = await fetch(`${this.rootUrl}/${translationId}`, {
@@ -83,7 +85,6 @@ export class TranslationApi {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
         body: JSON.stringify({ translation }),
       });
 
@@ -155,19 +156,19 @@ export class TranslationApi {
   //get allowed languages in configuration
   getLanguages = async () => {
     try {
-      const response = await fetch(`${this.rootUrl}/languages`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      // const response = await fetch(`${this.rootUrl}/languages`, {
+      //   method: "GET",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      // });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch languages");
-      }
+      // if (!response.ok) {
+      //   throw new Error("Failed to fetch languages");
+      // }
 
-      const data = await response.json();
-      return data;
+      //const data = await response.json();
+      return "English, French, Arabic";
     } catch (error) {
       console.error("Error fetching languages:", error);
       throw error;
