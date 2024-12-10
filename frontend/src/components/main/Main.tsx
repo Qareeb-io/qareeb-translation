@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import SearchBar from "../ui/SearchBar";
 import CustomButton from "../ui/CustomButton";
-import { Plus, Trash } from "lucide-react";
+import { Plus, Tag } from "lucide-react";
 import ViewTCardModal from "./translation-card/ViewTCardModal";
 import { TranslationT, CategoryT } from "../../utils/types";
 import AddEditTCardModal from "./translation-card/AddEditTCardModal";
@@ -13,11 +13,6 @@ import AddEditCategory from "./translation-category/AddEditCategory";
 import { CategoryApi } from "../../apis/categoryApi";
 
 const Main: React.FC = () => {
-  const [translations, setTranslations] = useState<TranslationT[]>([
-    /* Placeholder translations */
-  ]);
-  const [filteredTranslations, setFilteredTranslations] =
-    useState<TranslationT[]>(translations);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTranslation, setSelectedTranslation] =
     useState<TranslationT | null>(null);
@@ -26,16 +21,16 @@ const Main: React.FC = () => {
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
   const [isAddEdiCategoryOpen, setIsAddEdiCategoryOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryT>();
-  const [selectedCards, setSelectedCards] = useState<Set<number>>(new Set());
+  const [isCategoryOpenDynamically, setIsCategoryOpenDynamically] =
+    useState(false);
   const { isSmallScreen } = useScreen();
   const translationApi = new TranslationApi();
   const categoryApi = new CategoryApi();
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Placeholder category data
-  const categories = [
+  const [categories, setCategories] = useState([
     {
-      icon: <Plus />, // Add an appropriate icon here
       name: "Greetings",
       translations: [
         {
@@ -54,7 +49,6 @@ const Main: React.FC = () => {
       ],
     },
     {
-      icon: <Trash />, // Add an appropriate icon here
       name: "Errors",
       translations: [
         {
@@ -75,31 +69,88 @@ const Main: React.FC = () => {
         },
       ],
     },
-  ];
+  ]);
+  const [filteredCategories, setFilteredCategories] = useState(categories);
 
   useEffect(() => {
-    const getTranslations = async () => {
-      const translations = await translationApi.getTranslations();
-      if (translations) {
-        setTranslations(translations);
-        setFilteredTranslations(translations);
+    const getCategories = async () => {
+      const categories = await categoryApi.getAllCategories();
+      if (categories) {
+        setCategories(categories);
       }
     };
 
-    getTranslations();
+    getCategories();
   }, []);
 
   useEffect(() => {
-    const results = translations.filter((translation) =>
-      translation.translationKey
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase())
-    );
-    setFilteredTranslations(results);
-  }, [searchQuery, translations]);
+    if (searchQuery === "") {
+      // Reset to original data when search query is empty
+      setFilteredCategories(categories);
+      return;
+    }
+
+    const filteredCategories = categories
+      .map((category) => {
+        // Check if the category name matches
+        const categoryNameMatches = category.name
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase());
+
+        // Filter translations within the category
+        const filteredTranslations = category.translations.filter(
+          (translation) =>
+            translation.translationKey
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
+            translation.translationPreview
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
+            translation.detailedTranslations.some((detail) =>
+              detail.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+        );
+
+        // Include the category:
+        // - If the category name matches, include all translations
+        // - If only translations match, include the category with filtered translations
+        if (categoryNameMatches || filteredTranslations.length > 0) {
+          return {
+            ...category,
+            translations: categoryNameMatches
+              ? category.translations
+              : filteredTranslations,
+          };
+        }
+
+        return null; // Exclude categories that don't match
+      })
+      .filter(
+        (
+          category
+        ): category is {
+          name: string;
+          translations: {
+            translationKey: string;
+            translationPreview: string;
+            detailedTranslations: string[];
+          }[];
+        } => category !== null
+      ); // Type guard for non-null values
+
+    setFilteredCategories(filteredCategories);
+  }, [searchQuery, categories]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+
+    if (query !== "" && filteredCategories.length > 0) {
+      setIsCategoryOpenDynamically(true);
+      return;
+    }
+    if (query === "") {
+      setIsCategoryOpenDynamically(false);
+    }
   };
 
   const handleAddTranslationClick = (
@@ -113,27 +164,7 @@ const Main: React.FC = () => {
 
   const handleTranslationClick = (translation: TranslationT) => {
     setSelectedTranslation(translation);
-    setIsViewModalOpen(true);
-  };
-
-  const handleTranslationSelect = (index: number, selected: boolean) => {
-    setSelectedCards((prev) => {
-      const updated = new Set(prev);
-      if (selected) {
-        updated.add(index);
-      } else {
-        updated.delete(index);
-      }
-      return updated;
-    });
-  };
-
-  const handleEditCategory = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-  };
-
-  const handleDeleteCategory = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
+    setIsAddEditModalOpen(true);
   };
 
   const addTranslation = async (translation: TranslationT) => {
@@ -160,37 +191,14 @@ const Main: React.FC = () => {
     setSelectedCategory(undefined);
   };
 
-  const deleteTranslation = async () => {
+  const deleteTranslation = async (t: TranslationT) => {
     try {
-      const response = await translationApi.deleteTranslation(
-        selectedTranslation?.id!
-      );
+      const response = await translationApi.deleteTranslation(t?.id!);
       console.log({ response });
     } catch (e) {
       console.log("error", e);
     }
     setSelectedCategory(undefined);
-  };
-
-  const deleteSelectedCards = async () => {
-    const selectedIds = Array.from(selectedCards).map(
-      (index) => translations[index].id
-    );
-
-    const remainingTranslations = translations.filter(
-      (_, index) => !selectedCards.has(index)
-    );
-
-    setTranslations(remainingTranslations);
-    setFilteredTranslations(remainingTranslations);
-    setSelectedCards(new Set());
-
-    try {
-      const response = await translationApi.deleteTranslationBulk(selectedIds);
-      console.log({ response });
-    } catch (e) {
-      console.log("error", e);
-    }
   };
 
   const addCategory = async (
@@ -221,25 +229,25 @@ const Main: React.FC = () => {
     setSelectedCategory(undefined);
   };
 
+  const deleteCategory = async (category: CategoryT) => {
+    try {
+      const response = await categoryApi.deleteCategory(category);
+      console.log({ response });
+    } catch (e) {
+      console.log("Error", e);
+    }
+    setSelectedCategory(undefined);
+  };
+
   return (
     <main
       ref={containerRef}
       className="p-6 bg-light-background dark:bg-dark-background flex flex-col gap-6"
     >
       {/* Search Bar and Buttons */}
-      <div className="flex items-center justify-between">
-        {!(selectedCards.size > 0 && isSmallScreen) && (
-          <SearchBar onSearch={handleSearch} />
-        )}
+      <div className="flex items-center justify-between max-w-4xl">
+        <SearchBar onSearch={handleSearch} />
         <div className="flex gap-2 justify-between">
-          {selectedCards.size > 0 && (
-            <CustomButton
-              onClick={() => setIsDeleteModalOpen(true)}
-              text={`${isSmallScreen ? "Delete" : "Delete Selected"}`}
-              icon={<Trash size={20} className="mb-1" />}
-              className="bg-red-500 text-white w-35 md:w-52"
-            />
-          )}
           <CustomButton
             onClick={() => setIsAddEdiCategoryOpen(true)}
             text={`${isSmallScreen ? "Add" : "Add Category"}`}
@@ -251,10 +259,11 @@ const Main: React.FC = () => {
 
       {/* Categories */}
       <div className="mt-2 space-y-6">
-        {categories.map((category, index) => (
+        {filteredCategories.map((category, index) => (
           <Category
+            isOpenDynamic={isCategoryOpenDynamically}
             key={index}
-            icon={category.icon}
+            icon={<Tag />}
             name={category.name}
             translations={category.translations}
             onAddTranslation={(e) => handleAddTranslationClick(e, category)}
@@ -270,6 +279,9 @@ const Main: React.FC = () => {
               e.stopPropagation();
               setSelectedCategory(category);
               setIsDeleteModalOpen(true);
+            }}
+            onRemoveTranslation={(t) => {
+              deleteTranslation(t);
             }}
           />
         ))}
@@ -300,7 +312,7 @@ const Main: React.FC = () => {
           onEdit={() => setIsAddEditModalOpen(true)}
           onDelete={() => {
             setIsViewModalOpen(false);
-            deleteTranslation();
+            deleteTranslation(selectedTranslation);
           }}
         />
       )}
@@ -308,9 +320,10 @@ const Main: React.FC = () => {
       <DeleteModal
         mode="category"
         isOpen={isDeleteModalOpen}
-        translation={selectedTranslation!}
-        selectedCards={selectedCards}
-        onDelete={() => {}}
+        category={selectedCategory!}
+        onDelete={() =>
+          selectedCategory ? deleteCategory(selectedCategory) : null
+        }
         onClose={() => setIsDeleteModalOpen(false)}
       />
 

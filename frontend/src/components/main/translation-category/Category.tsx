@@ -4,6 +4,7 @@ import Tcard from "../translation-card/Tcard";
 import { TranslationT } from "../../../utils/types";
 
 interface CategoryProps {
+  isOpenDynamic: boolean;
   icon: React.ReactNode;
   name: string;
   translations: TranslationT[];
@@ -11,9 +12,11 @@ interface CategoryProps {
   onEditCategory: (e: React.MouseEvent<HTMLDivElement>) => void;
   onDeleteCategory: (e: React.MouseEvent<HTMLDivElement>) => void;
   onViewTranslation: (translation: TranslationT) => void;
+  onRemoveTranslation: (translation: TranslationT) => void;
 }
 
 const Category: React.FC<CategoryProps> = ({
+  isOpenDynamic,
   icon,
   name,
   translations,
@@ -21,6 +24,7 @@ const Category: React.FC<CategoryProps> = ({
   onEditCategory,
   onDeleteCategory,
   onViewTranslation,
+  onRemoveTranslation,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -29,7 +33,7 @@ const Category: React.FC<CategoryProps> = ({
   };
 
   return (
-    <div className="border border-gray-200 dark:border-gray-700 rounded-lg">
+    <div className="border border-gray-200 dark:border-gray-700 rounded-lg max-w-4xl">
       {/* Header */}
       <div
         className="flex items-center justify-between p-4 bg-light-primary dark:bg-dark-primary/70 text-white rounded-t-lg cursor-pointer"
@@ -46,7 +50,7 @@ const Category: React.FC<CategoryProps> = ({
           >
             <Plus />
           </div>
-          {isOpen && (
+          {(isOpen || isOpenDynamic) && (
             <div className="flex flex-row space-x-2">
               <div
                 className="hover:scale-110 dark:hover:scale-105 transiton duration-300"
@@ -69,17 +73,20 @@ const Category: React.FC<CategoryProps> = ({
       </div>
 
       {/* Content */}
-      {isOpen && (
-        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {(isOpen || isOpenDynamic) && (
+        <div className="p-4 grid grid-cols-1 gap-4">
           {translations.map((translation, index) => (
             <Tcard
               key={index}
               translationKey={translation.translationKey}
               translationPreview={translation.translationPreview}
               onClick={() => onViewTranslation(translation)}
+              onRemove={(e) => {
+                e.stopPropagation();
+                onRemoveTranslation(translation);
+              }}
               onSelect={(selected) => console.log("Selected:", selected)}
               index={index}
-              isGloballySelected={false}
             />
           ))}
         </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FileText, X } from "lucide-react";
+import { FileText, Trash, X } from "lucide-react";
 
 interface TcardProps {
   mode?: "quick" | "normal";
@@ -9,7 +9,6 @@ interface TcardProps {
   onClick: () => void;
   onSelect: (index: number, selected: boolean) => void;
   onRemove?: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  isGloballySelected: boolean;
 }
 
 const Tcard: React.FC<TcardProps> = ({
@@ -20,51 +19,27 @@ const Tcard: React.FC<TcardProps> = ({
   onClick,
   onSelect,
   onRemove,
-  isGloballySelected,
 }) => {
   const [isSelected, setIsSelected] = useState(false);
-
-  // Reset selection when global selection is cleared
-  useEffect(() => {
-    if (!isGloballySelected) {
-      setIsSelected(false);
-    }
-  }, [isGloballySelected]);
 
   const handleLeftClick = (event: React.MouseEvent) => {
     // Prevent right-click menu from interfering
     if (event.button === 0) {
       event.stopPropagation();
-      if (isGloballySelected) {
-        // When in selection mode, toggle selection
-        const newSelectedState = !isSelected;
-        setIsSelected(newSelectedState);
-        onSelect(index, newSelectedState);
-      } else {
-        // Normal click to open/view
-        onClick();
-      }
+
+      // Normal click to open/view
+      onClick();
     }
   };
 
-  const handleRightClick = (event: React.MouseEvent) => {
-    event.preventDefault(); // Prevent context menu
-    event.stopPropagation();
-
-    // Toggle selection state
-    const newSelectedState = !isSelected;
-    setIsSelected(newSelectedState);
-    onSelect(index, newSelectedState);
-  };
   return (
     <div
       onClick={handleLeftClick}
-      onContextMenu={handleRightClick}
       className={`relative cursor-pointer border ${
         isSelected
           ? "border-light-primary dark:border-dark-primary bg-primary-light"
           : "border-light-muted/30 dark:border-dark-muted/30"
-      } bg-light-background dark:bg-dark-background text-light-text-primary dark:text-dark-text-primary shadow-md hover:shadow-lg rounded p-3 transition max-w-82 max-w-full`}
+      } bg-light-background dark:bg-dark-background text-light-text-primary dark:text-dark-text-primary shadow-md hover:shadow-lg rounded p-3 transition max-w-full`}
     >
       {mode === "quick" && (
         <button
@@ -84,6 +59,14 @@ const Tcard: React.FC<TcardProps> = ({
             </p>
           </div>
         </div>
+        {mode === "normal" && (
+          <button
+            onClick={(e) => (onRemove ? onRemove(e) : null)}
+            className="flex p-1 items-center rounded-full text-gray-800 dark:text-gray-300 hover:scale-110 dark:hover:scale-110 transition duration-300"
+          >
+            <Trash size={20} />
+          </button>
+        )}
       </div>
     </div>
   );

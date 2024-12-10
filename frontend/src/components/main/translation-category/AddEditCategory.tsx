@@ -239,7 +239,6 @@ const AddEditCategory: React.FC<AddEditCategoryProps> = ({
                               console.log("Selected:", selected)
                             }
                             index={index}
-                            isGloballySelected={false}
                             onRemove={(e) =>
                               handleTranslationRemove(e, translation)
                             }

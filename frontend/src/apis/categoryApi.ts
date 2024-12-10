@@ -88,6 +88,27 @@ export class CategoryApi {
     }
   };
 
+  deleteCategory = async (category: CategoryT) => {
+    try {
+      const response = await fetch(`${this.rootUrl}/${category.name}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update category");
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error updating category:", error);
+      throw error;
+    }
+  };
+
   insertTranslationBulk = async (
     categoryName: string,
     translations: TranslationT[]

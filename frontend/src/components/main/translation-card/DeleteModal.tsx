@@ -1,12 +1,12 @@
 import React from "react";
-import { TranslationT } from "../../../utils/types";
+import { CategoryT, TranslationT } from "../../../utils/types";
 import { Trash, X } from "lucide-react"; // Import icons for the buttons
 
 interface DeleteModalProps {
   mode: "translation" | "category";
   isOpen: boolean;
-  translation: TranslationT | null;
-  selectedCards: Set<number>;
+  category?: CategoryT | null;
+  translation?: TranslationT | null;
   onDelete: (translationKey: string) => void;
   onClose: () => void;
 }
@@ -14,14 +14,14 @@ interface DeleteModalProps {
 const DeleteModal: React.FC<DeleteModalProps> = ({
   mode,
   isOpen,
+  category,
   translation,
-  selectedCards,
   onDelete,
   onClose,
 }) => {
   const handleDelete = () => {
-    if (translation) {
-      onDelete(translation.translationKey);
+    if (category) {
+      onDelete(category.name);
     }
     onClose();
   };
@@ -46,10 +46,6 @@ const DeleteModal: React.FC<DeleteModalProps> = ({
         {mode === "category" ? (
           <p className="mt-4 text-light-text-primary dark:text-dark-text-primary">
             Are you sure you want to delete this category?
-          </p>
-        ) : selectedCards ? (
-          <p className="mt-4 text-light-text-primary dark:text-dark-text-primary">
-            Are you sure you want to delete the selected translations?
           </p>
         ) : (
           <p className="mt-4 text-light-text-primary dark:text-dark-text-primary">
